@@ -1,18 +1,20 @@
 (ns parallel-consumers.core)
 (require '[clojure.java.jdbc :as sql])
 
+;; a single threaded producer reads a text file, enqueues its lines, and single threaded consumers execute concurrently
+;; and insert the lines into a database. 
 ;; this is just a proof of concept!!
 ;; some things it is missing now:
 ;; - What happens if the file does not exist?
 ;; - What happens if the file goes away/changes size/name?
 ;; - What happens if the queue grows beyond size X because the consumers are slow?
-;; - Parametrize everything that's parametrizable (at least, # of consumers, jdbc driver + url)
+;; - Parametrize everything that's parametrizable (at least, # of consumers, file name, jdbc driver + url)
 ;; - Make it exit gracefully after every future is done
 
 ;; I'll use a LinkedBlockingDeque to send data to consumers
 (defn new-q [] (java.util.concurrent.LinkedBlockingDeque.))
 
-;; queue API
+;; queue 'API'
 (defn add!
   "add data to the back of queue"
   [queue data]
@@ -21,7 +23,6 @@
 (defn take!
   "takes data from the front of queue, blocking if queue is empty"
   [queue] (.take queue))
-
 
 ;; define the queue
 
