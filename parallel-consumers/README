@@ -1,0 +1,8 @@
+# parallel-consumers
+
+Simple example of the producer-consumer model, with one producer, and multiple consumers.
+
+## Usage
+
+lein run. though bear in mind a lot of things are hardcoded now. this is just a proof of concept. 
+
