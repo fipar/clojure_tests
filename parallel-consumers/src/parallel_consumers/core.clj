@@ -1,5 +1,6 @@
 (ns parallel-consumers.core)
 (require '[clojure.java.jdbc :as sql])
+(use '[clojure.tools.cli :only [cli]])
 
 ;; a single threaded producer reads a text file, enqueues its lines, and single threaded consumers execute concurrently
 ;; and insert the lines into a database. 
@@ -8,7 +9,6 @@
 ;; - What happens if the file does not exist?
 ;; - What happens if the file goes away/changes size/name?
 ;; - What happens if the queue grows beyond size X because the consumers are slow?
-;; - Parametrize everything that's parametrizable (at least, # of consumers, file name, jdbc driver + url)
 ;; - Make it exit gracefully after every future is done
 
 ;; I'll use a LinkedBlockingDeque to send data to consumers
@@ -28,13 +28,6 @@
 
 (def global-queue (new-q))
 
-;; jdbc init
-
-(def mysql-db {:subprotocol "mysql"
-               :subname "//127.0.0.1:5527/test"
-               :user "msandbox"
-               :password "msandbox"})
-
 ;; the single-threaded producer
 
 (defn producer!
@@ -42,6 +35,15 @@
   [file-name]
   (with-open [reader (java.io.BufferedReader. (java.io.FileReader. file-name))]
     (doseq [line (line-seq reader)] (add! global-queue line)))
+  )
+
+(defn init-db!
+  "initializes the database connection, which is a global variable"
+   [options]
+   (def mysql-db {:subprotocol "mysql"
+		  :subname (:url options)
+		  :user (:user options)
+		  :password (:passwd options)})  
   )
 
 ;; the single-threaded consumer
@@ -59,12 +61,19 @@
 
 (defn -main [& args]
   (do
-    ;; open the file, fire up the single threaded producer
-    (future (producer! "/var/log/system.log"))
-    ;; fire up 10 parallel single-threaded consumers
-    ;;(for [x (range 10)] (future (consumer!)))))
-
-    ;; single-threaded test
-    (future (consumer!))))
-
-
+    (let [[options args banner]
+	  (cli args
+	       ["-file"]
+	       ["-url" :default "//127.0.0.1:5527/test"]
+	       ["-user" :default "msandbox"]
+	       ["-passwd" :default "msandbox"]
+	       ["-threads" :default 5])]
+      (when
+	  (nil? (:file options))
+	(do
+	  (println "-file is mandatory")
+	  (System/exit 0)))
+      (init-db! options)
+      (future (producer! (:file options)))
+      (for [x (range (Integer/parseInt (:threads options)))] (future (consumer!))))))
+    
