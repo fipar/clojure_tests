@@ -2,5 +2,8 @@
   (:use [parallel-consumers.core])
   (:use [clojure.test]))
 
-(deftest replace-me ;; FIXME: write
-  (is false "No tests have been written."))
+(deftest test-queue
+  (do
+    (add! global-queue "Test string")
+    (is (= "Test string" (take! global-queue)))
+    ))
