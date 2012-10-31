@@ -2,7 +2,17 @@
 
 Simple example of the producer-consumer model, with one producer, and multiple consumers.
 
+The producer reads a text file and enqueues it's lines for the consumers to read in parallel and insert into a database table. 
+
 ## Usage
 
-lein run. though bear in mind a lot of things are hardcoded now. this is just a proof of concept. 
+lein run [options]
+
+Valid options are: 
+-file : the file the producer should read. mandatory, no default value. 
+-url  : jdbc url for the consumers.
+-user : database username. 
+-password : database password. 
+-threads : number of consumer threads to start (default: 5)
+
 
